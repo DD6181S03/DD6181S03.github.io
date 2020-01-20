@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
-    <id>https://dd6181s03.github.io</id>
+    <id>https://d6s3.ac.cn</id>
     <title>D6S3&apos;s Blog</title>
-    <updated>2020-01-20T07:34:17.501Z</updated>
+    <updated>2020-01-20T08:02:54.380Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
-    <link rel="alternate" href="https://dd6181s03.github.io"/>
-    <link rel="self" href="https://dd6181s03.github.io/atom.xml"/>
+    <link rel="alternate" href="https://d6s3.ac.cn"/>
+    <link rel="self" href="https://d6s3.ac.cn/atom.xml"/>
     <subtitle>年更博客又来刷存在感了</subtitle>
-    <logo>https://dd6181s03.github.io/images/avatar.png</logo>
-    <icon>https://dd6181s03.github.io/favicon.ico</icon>
+    <logo>https://d6s3.ac.cn/images/avatar.png</logo>
+    <icon>https://d6s3.ac.cn/favicon.ico</icon>
     <rights>All rights reserved 2020, D6S3&apos;s Blog</rights>
     <entry>
         <title type="html"><![CDATA[迁移到Gridea]]></title>
-        <id>https://dd6181s03.github.io/post/move-to-gridea</id>
-        <link href="https://dd6181s03.github.io/post/move-to-gridea">
+        <id>https://d6s3.ac.cn/post/move-to-gridea</id>
+        <link href="https://d6s3.ac.cn/post/move-to-gridea">
         </link>
         <updated>2020-01-20T03:30:00.000Z</updated>
         <content type="html"><![CDATA[<blockquote>
@@ -26,8 +26,8 @@
     </entry>
     <entry>
         <title type="html"><![CDATA[这次的第一篇文章]]></title>
-        <id>https://dd6181s03.github.io/post/my-first-post</id>
-        <link href="https://dd6181s03.github.io/post/my-first-post">
+        <id>https://d6s3.ac.cn/post/my-first-post</id>
+        <link href="https://d6s3.ac.cn/post/my-first-post">
         </link>
         <updated>2018-07-27T00:05:40.000Z</updated>
         <summary type="html"><![CDATA[<p>时隔不知道多长时间之后，我又回来了</p>
