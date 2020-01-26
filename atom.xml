@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://d6s3.ac.cn</id>
     <title>D6S3&apos;s Blog</title>
-    <updated>2020-01-20T08:06:47.496Z</updated>
+    <updated>2020-01-26T10:58:31.778Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://d6s3.ac.cn"/>
     <link rel="self" href="https://d6s3.ac.cn/atom.xml"/>
@@ -10,6 +10,34 @@
     <logo>https://d6s3.ac.cn/images/avatar.png</logo>
     <icon>https://d6s3.ac.cn/favicon.ico</icon>
     <rights>All rights reserved 2020, D6S3&apos;s Blog</rights>
+    <entry>
+        <title type="html"><![CDATA[济南公交实时位置查询开发记]]></title>
+        <id>https://d6s3.ac.cn/post/f369</id>
+        <link href="https://d6s3.ac.cn/post/f369">
+        </link>
+        <updated>2020-01-26T09:05:26.000Z</updated>
+        <summary type="html"><![CDATA[<p>做第三方的济南公交实时位置查询也有很久了，分享一下这个过程。<br>
+写这个文章的前半段的时候是2019年暑假，等我现在再接着写的时候，已经想不起来当时的思路了。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>做第三方的济南公交实时位置查询也有很久了，分享一下这个过程。<br>
+写这个文章的前半段的时候是2019年暑假，等我现在再接着写的时候，已经想不起来当时的思路了。</p>
+<!-- more -->
+<h2 id="项目的由来">项目的由来</h2>
+<p>总想着讲点历史</p>
+<p>济南公交在移动互联网方面，最早的时候是走在前面的，当时那个Android4.x的时代，济南公交就与微步合作完成了公交实时位置查询。<br>
+后来一位ID叫“跳河自杀的螃蟹”的济南公交吧吧友抓包得到了接口，并用VB做了一个Windows版本的公交实时位置查询。说的难听一点，在电脑上查公交实时位置的需求似乎很少，但是在当时，想入门编程，VB还是很多人的选择，第一个练手程序用VB写自己感兴趣领域的工具，没有什么不妥。<br>
+这个程序我当时下载了，但现在已经找不到了。直到“螃蟹”上了大学，他又做了网页版的这个工具，起名叫智慧公交，并且分享给大家使用。我当时大概还在上初中吧。</p>
+<p>突然有这么一天，济南公交就改接口了，其实就是验证了请求头里的version字段。当时螃蟹有事情来不及改，我就用Nginx反代了济南公交的后端，然而并没有什么用，谁会去看返回的一大坨json结果呢。当然没过几天，螃蟹就改好了。</p>
+<p>又过了很长一段时间，智慧公交又暂停服务了，好像是螃蟹要加新功能。当时我上高二，稍微会一点Python，又刚刚给学校里写了运动会出入管理工具，觉得写这种实用工具很有意思，就决定自己要重复造轮子，把这个网页版查车工具给写出来。我写了有一个多星期吧，每天下午课外活动的时间去写，把它写到能用的程度了，不过真的只是能用，不好用，更不好看。</p>
+<h2 id="第一个版本完成之后">第一个版本完成之后</h2>
+<p>后来在19年过年期间，我用Bootstrap-Flask给网站做了稍微好看一点的前端。<br>
+19年的暑假，我打算给这个网站加入路线查询的功能，但没有实现。<br>
+19年下半年，由于369出行新版本的接口变动，我不在济南上学，太懒不想改程序，就把这个网站关掉了，直到放寒假回到济南，我自己要用，才又研究了一下新的接口，实现了之前的功能，还加了新功能。</p>
+<h2 id="展望">展望</h2>
+<p>现在这个版本算是一个阶段性的成果，虽然还是有点丑。<br>
+之后我肯定还会想添加新的功能，但我意识到我现在做这个网站用的解决方案并不够好，如果只是网页，用JavaScript让浏览器直接发请求最好。还有人要求我做APP，我也动摇了（可是我最初做这个网站就是为了不安装APP），可能是我想用Flutter写点东西的原因吧。这些都是展望而已了，挖的坑太多，手头上还有其他的事情要做。开学之前，我也许会把当前的版本放到Github上开源吧，还有可能会打包成Docker image，仅仅是也许、可能而已……</p>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[迁移到Gridea]]></title>
         <id>https://d6s3.ac.cn/post/move-to-gridea</id>
