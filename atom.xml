@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://d6s3.ac.cn</id>
     <title>D6S3&apos;s Blog</title>
-    <updated>2020-04-18T08:41:44.043Z</updated>
+    <updated>2020-06-13T13:41:37.252Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://d6s3.ac.cn"/>
     <link rel="self" href="https://d6s3.ac.cn/atom.xml"/>
@@ -10,6 +10,39 @@
     <logo>https://d6s3.ac.cn/images/avatar.png</logo>
     <icon>https://d6s3.ac.cn/favicon.ico</icon>
     <rights>All rights reserved 2020, D6S3&apos;s Blog</rights>
+    <entry>
+        <title type="html"><![CDATA[京造K2/Keychron K2键盘在Linux系统下的Fn功能键使用]]></title>
+        <id>https://d6s3.ac.cn/post/keychron-k2-on-linux/</id>
+        <link href="https://d6s3.ac.cn/post/keychron-k2-on-linux/">
+        </link>
+        <updated>2020-06-13T05:58:07.000Z</updated>
+        <summary type="html"><![CDATA[<p>前段时间买了一个京造K2机械键盘，各方面都比较满意，但有一个比较坑的点：在Windows键位下，功能键是直接发送的相应功能的键位而非F1、F2之类的键位，按照说明书上的指示进行切换也没有用。因此我被迫上网寻找解决方案。<br>
+注意：本篇文章不打算讨论手感等玄学话题。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>前段时间买了一个京造K2机械键盘，各方面都比较满意，但有一个比较坑的点：在Windows键位下，功能键是直接发送的相应功能的键位而非F1、F2之类的键位，按照说明书上的指示进行切换也没有用。因此我被迫上网寻找解决方案。<br>
+注意：本篇文章不打算讨论手感等玄学话题。</p>
+<!-- more -->
+<h2 id="关于这个键盘的简单介绍">关于这个键盘的简单介绍</h2>
+<p>这个键盘在国内售卖用的是“京东京造”这个品牌，但实际上就是Keychron K2这款键盘，除了包装、标识等方面，和Keychron K2无异，经过我亲自大胆测试，固件也可以通刷，我已更新到官方的1.6.2固件，如果你也想自己更新固件，记得下载时选择US Layout, White Backlight（美式键盘布局白色背光）的固件版本，刷入错误的固件可能会让键盘变砖（应该会吧，这我真没试过）。</p>
+<h2 id="为什么我尝试更新固件">为什么我尝试更新固件</h2>
+<p>原因很简单，我在Reddit上看到有人说更新固件后我文章开头处提到的问题得到了解决，我就尝试更新了，但事实上问题并没有得到解决。</p>
+<h2 id="所以应该怎么办">所以应该怎么办</h2>
+<p>从网上搜索到了一个非常好的解决方案，将/sys/module/hid_apple/parameters/fnmode的值改为0即可，关于这个设置的意义，<a href="https://help.ubuntu.com/community/AppleKeyboard#Change_Function_Key_behavior">这篇Ubuntu的文档</a>已经讲的很清楚了，虽然文档里说的和实际情况并不是很匹配，但把这个值改成0确实管用，具体怎么起作用的，我暂且不能给出解答。</p>
+<h3 id="让它自动修改">让它自动修改</h3>
+<p>这个驱动模块的参数每次重启就会变回默认的1，我也不知道更好的方法在启动时修改它，只好写了一个systemd的service来每次开机时修改这个参数的值，我这个配置文件的路径为/etc/systemd/system/keychron.service。内容如下：</p>
+<pre><code>[Unit]
+Description=Make Keychron K2 work
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c &quot;echo 0 &gt; /sys/module/hid_apple/parameters/fnmode&quot;
+
+[Install]
+WantedBy=multi-user.target
+</code></pre>
+<p>写好后<code>sudo systemctl enable keychron.service</code>就行啦。</p>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[探究国标中的纸张尺寸问题]]></title>
         <id>https://d6s3.ac.cn/post/paper-size/</id>

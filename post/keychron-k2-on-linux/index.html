@@ -1,0 +1,218 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>京造K2/Keychron K2键盘在Linux系统下的Fn功能键使用 | D6S3&#39;s Blog</title>
+<link rel="shortcut icon" href="https://d6s3.ac.cn/favicon.ico?v=1592055657244">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
+<link rel="stylesheet" href="https://d6s3.ac.cn/styles/main.css">
+<link rel="alternate" type="application/atom+xml" title="京造K2/Keychron K2键盘在Linux系统下的Fn功能键使用 | D6S3&#39;s Blog - Atom Feed" href="https://d6s3.ac.cn/atom.xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
+
+
+
+    <meta name="description" content="前段时间买了一个京造K2机械键盘，各方面都比较满意，但有一个比较坑的点：在Windows键位下，功能键是直接发送的相应功能的键位而非F1、F2之类的键位，按照说明书上的指示进行切换也没有用。因此我被迫上网寻找解决方案。
+注意：本篇文章不打算..." />
+    <meta name="keywords" content="Linux,键盘" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+    <script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <div class="main">
+      <div class="main-content">
+        <div class="site-header">
+  <a href="https://d6s3.ac.cn">
+  <img class="avatar" src="https://d6s3.ac.cn/images/avatar.png?v=1592055657244" alt="">
+  </a>
+  <h1 class="site-title">
+    D6S3&#39;s Blog
+  </h1>
+  <p class="site-description">
+    年更博客又来刷存在感了
+  </p>
+  <div class="menu-container">
+    
+      
+        <a href="/" class="menu">
+          首页
+        </a>
+      
+    
+      
+        <a href="/archives" class="menu">
+          归档
+        </a>
+      
+    
+      
+        <a href="/tags" class="menu">
+          标签
+        </a>
+      
+    
+      
+        <a href="/post/links" class="menu">
+          友链
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu">
+          关于
+        </a>
+      
+    
+  </div>
+  <div class="social-container">
+    
+      
+        <a href="https://github.com/DD6181S03" target="_blank">
+          <i class="ri-github-line"></i>
+        </a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+</div>
+
+        <div class="post-detail">
+          <article class="post">
+            <h2 class="post-title">
+              京造K2/Keychron K2键盘在Linux系统下的Fn功能键使用
+            </h2>
+            <div class="post-info">
+              <span>
+                2020-06-13
+              </span>
+              <span>
+                3 min read
+              </span>
+              
+                <a href="https://d6s3.ac.cn/tag/linux/" class="post-tag">
+                  # Linux
+                </a>
+              
+                <a href="https://d6s3.ac.cn/tag/keyboard/" class="post-tag">
+                  # 键盘
+                </a>
+              
+            </div>
+            
+            <div class="post-content-wrapper">
+              <div class="post-content">
+                <p>前段时间买了一个京造K2机械键盘，各方面都比较满意，但有一个比较坑的点：在Windows键位下，功能键是直接发送的相应功能的键位而非F1、F2之类的键位，按照说明书上的指示进行切换也没有用。因此我被迫上网寻找解决方案。<br>
+注意：本篇文章不打算讨论手感等玄学话题。</p>
+<!-- more -->
+<h2 id="关于这个键盘的简单介绍">关于这个键盘的简单介绍</h2>
+<p>这个键盘在国内售卖用的是“京东京造”这个品牌，但实际上就是Keychron K2这款键盘，除了包装、标识等方面，和Keychron K2无异，经过我亲自大胆测试，固件也可以通刷，我已更新到官方的1.6.2固件，如果你也想自己更新固件，记得下载时选择US Layout, White Backlight（美式键盘布局白色背光）的固件版本，刷入错误的固件可能会让键盘变砖（应该会吧，这我真没试过）。</p>
+<h2 id="为什么我尝试更新固件">为什么我尝试更新固件</h2>
+<p>原因很简单，我在Reddit上看到有人说更新固件后我文章开头处提到的问题得到了解决，我就尝试更新了，但事实上问题并没有得到解决。</p>
+<h2 id="所以应该怎么办">所以应该怎么办</h2>
+<p>从网上搜索到了一个非常好的解决方案，将/sys/module/hid_apple/parameters/fnmode的值改为0即可，关于这个设置的意义，<a href="https://help.ubuntu.com/community/AppleKeyboard#Change_Function_Key_behavior">这篇Ubuntu的文档</a>已经讲的很清楚了，虽然文档里说的和实际情况并不是很匹配，但把这个值改成0确实管用，具体怎么起作用的，我暂且不能给出解答。</p>
+<h3 id="让它自动修改">让它自动修改</h3>
+<p>这个驱动模块的参数每次重启就会变回默认的1，我也不知道更好的方法在启动时修改它，只好写了一个systemd的service来每次开机时修改这个参数的值，我这个配置文件的路径为/etc/systemd/system/keychron.service。内容如下：</p>
+<pre><code>[Unit]
+Description=Make Keychron K2 work
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c &quot;echo 0 &gt; /sys/module/hid_apple/parameters/fnmode&quot;
+
+[Install]
+WantedBy=multi-user.target
+</code></pre>
+<p>写好后<code>sudo systemctl enable keychron.service</code>就行啦。</p>
+
+              </div>
+              <div class="toc-container">
+                <ul class="markdownIt-TOC">
+<li>
+<ul>
+<li><a href="#%E5%85%B3%E4%BA%8E%E8%BF%99%E4%B8%AA%E9%94%AE%E7%9B%98%E7%9A%84%E7%AE%80%E5%8D%95%E4%BB%8B%E7%BB%8D">关于这个键盘的简单介绍</a></li>
+<li><a href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E6%88%91%E5%B0%9D%E8%AF%95%E6%9B%B4%E6%96%B0%E5%9B%BA%E4%BB%B6">为什么我尝试更新固件</a></li>
+<li><a href="#%E6%89%80%E4%BB%A5%E5%BA%94%E8%AF%A5%E6%80%8E%E4%B9%88%E5%8A%9E">所以应该怎么办</a>
+<ul>
+<li><a href="#%E8%AE%A9%E5%AE%83%E8%87%AA%E5%8A%A8%E4%BF%AE%E6%94%B9">让它自动修改</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+              </div>
+            </div>
+          </article>
+        </div>
+
+        
+          <div class="next-post">
+            <div class="next">下一篇</div>
+            <a href="https://d6s3.ac.cn/post/paper-size/">
+              <h3 class="post-title">
+                探究国标中的纸张尺寸问题
+              </h3>
+            </a>
+          </div>
+        
+
+        
+
+        <div class="site-footer">
+  Powered by&nbsp;<a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a>
+  <a class="rss" href="https://d6s3.ac.cn/atom.xml" target="_blank">
+    <i class="ri-rss-line"></i> RSS
+  </a>
+</div>
+
+      </div>
+    </div>
+
+    <script>
+      hljs.initHighlightingOnLoad()
+
+      let mainNavLinks = document.querySelectorAll(".markdownIt-TOC a");
+
+      // This should probably be throttled.
+      // Especially because it triggers during smooth scrolling.
+      // https://lodash.com/docs/4.17.10#throttle
+      // You could do like...
+      // window.addEventListener("scroll", () => {
+      //    _.throttle(doThatStuff, 100);
+      // });
+      // Only not doing it here to keep this Pen dependency-free.
+
+      window.addEventListener("scroll", event => {
+        let fromTop = window.scrollY;
+
+        mainNavLinks.forEach((link, index) => {
+          let section = document.getElementById(decodeURI(link.hash).substring(1));
+          let nextSection = null
+          if (mainNavLinks[index + 1]) {
+            nextSection = document.getElementById(decodeURI(mainNavLinks[index + 1].hash).substring(1));
+          }
+          if (section.offsetTop <= fromTop) {
+            if (nextSection) {
+              if (nextSection.offsetTop > fromTop) {
+                link.classList.add("current");
+              } else {
+                link.classList.remove("current");    
+              }
+            } else {
+              link.classList.add("current");
+            }
+          } else {
+            link.classList.remove("current");
+          }
+        });
+      });
+
+    </script>
+  </body>
+</html>
