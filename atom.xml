@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://d6s3.ac.cn</id>
     <title>D6S3&apos;s Blog</title>
-    <updated>2020-06-14T01:57:31.165Z</updated>
+    <updated>2020-06-21T01:57:44.591Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://d6s3.ac.cn"/>
     <link rel="self" href="https://d6s3.ac.cn/atom.xml"/>
@@ -10,6 +10,62 @@
     <logo>https://d6s3.ac.cn/images/avatar.png</logo>
     <icon>https://d6s3.ac.cn/favicon.ico</icon>
     <rights>All rights reserved 2020, D6S3&apos;s Blog</rights>
+    <entry>
+        <title type="html"><![CDATA[初探JavaScript代码保护]]></title>
+        <id>https://d6s3.ac.cn/post/javascript-code-protection/</id>
+        <link href="https://d6s3.ac.cn/post/javascript-code-protection/">
+        </link>
+        <updated>2020-06-21T01:50:15.000Z</updated>
+        <summary type="html"><![CDATA[<p>本篇文章是我给微信公众号SKSEC的一篇投稿，在博客也发一下。<br>
+JavaScript作为常见的前端开发语言，代码需要发送至客户端由浏览器解释执行，这给保护代码带来了一定难度。那么说来，对前端代码进行保护有意义吗？说毫无意义就太过绝对了，尽可能增加攻击者分析代码的成本也是有效果的。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>本篇文章是我给微信公众号SKSEC的一篇投稿，在博客也发一下。<br>
+JavaScript作为常见的前端开发语言，代码需要发送至客户端由浏览器解释执行，这给保护代码带来了一定难度。那么说来，对前端代码进行保护有意义吗？说毫无意义就太过绝对了，尽可能增加攻击者分析代码的成本也是有效果的。</p>
+<!-- more -->
+<p>早期的网页内容比较简单，JavaScript代码在其中所占的成分更是轻微，保护起来意义不大。但在当下，若是用JS实现了页面上的某些重要功能，出于保护功能完整正常运作的目的，或是用JS负责了与后端服务器交互的逻辑，出于防止恶意伪造请求的目的，保护JavaScript代码都有其必要性。</p>
+<h2 id="压缩">压缩</h2>
+<p>有几个词常常伴随着出现：压缩、混淆、加密。压缩算不上是加密，但能带来有限的混淆效果。JS压缩的主要目的是减少文件的体积以方便传输，方法会有删除空格、缩进、注释，缩短变量名，删除无用代码等，以及合并多个文件中的模块到一个文件当中。<br>
+这就能带来混淆效果了，因为变量名被替换，而且单个文件中的代码量变大了，同时还失去了缩进。常见的压缩工具有YUI Compressor, UglifyJS等。<br>
+当然，现在也有大量的解压缩工具，浏览器自带的调试工具就能格式化代码，虽然不能完全还原变量名，但将层次结构还原出来还是可以做到的，这对于想要阅读代码的人来说并不是什么阻碍，只用压缩的方式，是起不到保护JS代码的作用的。</p>
+<h2 id="混淆与反调试">混淆与反调试</h2>
+<h3 id="变量名和常量">变量名和常量</h3>
+<p>压缩过程中，就有把变量名变短的策略，但在混淆过程中，常用的方法是替换成类似16进制的变量名（并不是真正的16进制）。同理，对于字符串等常量，可以用其16进制的Unicode编码替换，因为JavaScript会直接将16进制进行解码。<br>
+当然还可以把这些字符串、字段名称之类的都放在一个数组里，要用的时候去那个数组里取就可以了，至于让这个数组结构更复杂，取结果的过程再套个函数之类的，也都是可以的。更进一步，对常量处理时还可以自己写加解密的方法，虽然加解密过程都被看在眼里，但配合上其他的混淆，也是要分析一阵子的。<br>
+这种方法，可以看<a href="https://obfuscator.io">Javascript Obfuscator</a>这个项目的例子。</p>
+<h3 id="运算和流程">运算和流程</h3>
+<p>可以用函数封装一些基本运算和常用语法，例如四则运算，拼接字符串，各种循环等等，都封装成函数，再加上前面对常量的处理方法，读起来要费好大功夫了。在进行这些运算之前，还可以进行动态判断，创造不会被执行到的分支，也就是说，虽然名为“动态判断”，但判断结果一般都会是确定的，至于说怎么制造一个永真或永假的条件，那就可以自由发挥啦。<br>
+创造分支这一办法还可以用于改变程序运行流程，一个顺序执行的过程，放到循环里多次执行，通过一个控制条件的变化做到每次执行不同的语句，一整个循环结束后，结果上没有区别。有多层if/else嵌套的，也可以用这种方式把原本有先后顺序的分支放到同一个循环里成为一个大型且平行的分支，每次依照判断条件进入不同分支，还可以利用上面说到的，对判断条件做处理，让人难以看出真正的条件。</p>
+<h3 id="增加无用内容">增加无用内容</h3>
+<p>这里的”无用内容“范围就很广了，既可以增加无用逻辑，还可以制造陷阱，分析者进入陷阱后执行大量输出或占用内存等干扰调试的行为。</p>
+<h3 id="反调试">反调试</h3>
+<h4 id="函数重定义">函数重定义</h4>
+<p>可以在JS代码中重定义一些调试过程中可能会用到的常见函数，比如<code>eval</code>, <code>console.log()</code>等，让这些函数的返回结果与预期不同。</p>
+<h4 id="检测-干扰调试器">检测、干扰调试器</h4>
+<p>检测调试过程的一个方法是测量时间差异，如果正常执行，两个测量点之间的时间差较小，而在调试过程中运行时间差较大，就可以检测出调试行为。也可以通过检测调试器常见行为，或是检测网页大小更改的方法来判断是否在调试器中。<br>
+干扰调试器的一个常见方法就是插入<code>debugger;</code>语句，这样使得调试过程会被经常打断。当然，各种浏览器的调试工具也提供了忽略此类断点的功能。</p>
+<h3 id="代码分析的帮手">代码分析的帮手</h3>
+<p>像JavaScript这样的脚本语言，是由解释器将代码转化为抽象语法树(AST)之后再执行的。将代码解析为AST的工具和各种AST分析工具，可以在分析代码时起到辅助作用。只要一点点看，看的够细，总能看完的。</p>
+<h2 id="ctf比赛中常见的js混淆方法">CTF比赛中常见的JS混淆方法</h2>
+<p>JavaScript好像并不是CTF比赛的重点关注对象，不过就算做web用不到，说不定做misc能用到呢(笑)。</p>
+<h3 id="escape编码">escape编码</h3>
+<p>这个很常见了，有的地方叫做“escape加密”，我觉得不太妥当，这只是个编码用的函数而已，直接<code>unescape()</code>就可以得到原文了。而且，这个函数已经在当前的web标准中被弃用(deprecated)了，想达到类似效果，还可以用<code>encodeURI()</code>函数。</p>
+<h3 id="eval包裹">eval包裹</h3>
+<p>形如<code>eval(function(p,a,c,k,e,r){xxx})</code>，这种也能简单搞定，把eval的括号里的内容用<code>console.log()</code>打出来就可以了。</p>
+<h3 id="jsfuckjjencodeaaencode">jsfuck/jjencode/aaencode</h3>
+<p>都有解码工具，直接用工具解码即可，也可以直接在浏览器的控制台里运行看结果。</p>
+<h2 id="来点新鲜的electron程序">来点新鲜的：Electron程序</h2>
+<p>自从Electron框架出现，用前端语言写跨平台程序逐渐流行，现在已经有很多程序使用Electron开发了。有人可能有这样的问题，用Electron打包成GUI应用，和传统的在浏览器内执行，代码的安全性有提高吗？很遗憾，目前来说没有，Electron只是给程序打了个包。<br>
+以GKCTF2020的Node-Exe题目为例，在程序的resources目录下有app.asar，直接使用asar工具就可对其解包，得到的就是js代码了，不过也是混淆过的。这里面代码的混淆就用到了上面说的好多方法呢……</p>
+<h2 id="面向未来的web语言webassembly">面向未来的Web语言：WebAssembly</h2>
+<p>WebAssmembly（以下简称WASM）是一种新的类汇编低级编程语言，C/C++/Rust等语言可以编译到WASM，并以接近原生的速度在浏览器中运行，目前已被各大浏览器支持。WASM和JavaScript并不是一回事，但两者可以协同工作，互相调用和交互，但很可惜，WASM目前还不能直接对DOM进行操作。WASM不仅可以解决JavaScript的性能瓶颈，同时也大大增加了逆向前端代码的难度。毕竟二进制逆向比脚本语言逆向难度还是要高一些的，将关键的前端代码用WASM重写，在保护代码方面可能比上面那些混淆方法效果都要好，说不定还能有个提高性能的意外收获。<br>
+当然也不是说WASM就真的这么难逆向了，想动手尝试的，可以搜索强网杯2019的RE-Webassembly题目。</p>
+<h2 id="参考文章">参考文章</h2>
+<p><a href="https://juejin.im/post/5cfcb9d25188257e853fa71c">JavaScript混淆安全加固</a><br>
+<a href="https://www.52pojie.cn/thread-563895-1-1.html">Electron跨平台程序破解的一般思路</a><br>
+<a href="https://developer.mozilla.org/zh-CN/docs/WebAssembly">WebAssembly</a><br>
+<a href="https://github.com/sindresorhus/devtools-detect">devtools-detect</a></p>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[京造K2/Keychron K2键盘在Linux系统下的Fn功能键使用]]></title>
         <id>https://d6s3.ac.cn/post/keychron-k2-on-linux/</id>
